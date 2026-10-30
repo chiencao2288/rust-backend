@@ -1,0 +1,30 @@
+[package]
+name = "auth-service"
+version = "0.1.0"
+edition = "2021"
+description = "Central Authentication and Session Management Service"
+
+[dependencies]
+rn-redis = { path = "../../packages/rn-redis" }
+rn-postgres = { path = "../../packages/rn-postgres" }
+rn-contracts = { path = "../../packages/rn-contracts", features = ["auth"] }
+rn-utils = { path = "../../packages/rn-utils" }
+
+axum = "0.8"
+tokio = { version = "1.40", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.10", features = ["serde", "v7"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid", "chrono", "macros"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2.0"
+utoipa = { version = "6.0", features = ["uuid", "chrono"] }
+utoipa-swagger-ui = { version = "10.0", features = ["axum"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+dotenvy = "0.15"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"

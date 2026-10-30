@@ -1,0 +1,13 @@
+[package]
+name = "rn-postgres"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance PostgreSQL client library with read/write splitting"
+
+[dependencies]
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid", "chrono"] }
+thiserror = "2.0"
+tokio = { version = "1.40", features = ["time", "sync"] }
+
+[dev-dependencies]
+tokio = { version = "1.40", features = ["full", "macros", "rt-multi-thread"] }

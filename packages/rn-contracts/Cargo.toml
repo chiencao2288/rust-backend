@@ -1,0 +1,18 @@
+[package]
+name = "rn-contracts"
+version = "0.1.0"
+edition = "2021"
+description = "Shared contracts, DTOs, and client helpers for rn-services"
+
+[features]
+default = []
+all = ["auth"]
+auth = ["dep:serde", "dep:uuid", "dep:reqwest"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
+uuid = { version = "1.10", features = ["serde", "v7"], optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["json"], optional = true }
+
+[dev-dependencies]
+serde_json = "1.0"

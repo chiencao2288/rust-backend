@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: auth-dev-stack
+  labels:
+    app: auth-dev
+spec:
+  containers:
+    - name: postgres
+      image: docker.io/library/postgres:18
+      env:
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: postgres
+        - name: POSTGRES_DB
+          value: auth_db
+      ports:
+        - containerPort: 5432
+          hostPort: 5432
+      volumeMounts:
+        - name: sql-migrations
+          mountPath: /docker-entrypoint-initdb.d:ro
+
+    - name: redis
+      image: docker.io/library/redis:alpine
+      command:
+        - redis-server
+        - "--save"
+        - ""
+        - "--appendonly"
+        - "no"
+      ports:
+        - containerPort: 6379
+          hostPort: 6379
+
+  volumes:
+    - name: sql-migrations
+      hostPath:
+        path: /home/chiencao/Projects/services/services/auth-service/migrations
+        type: Directory
