@@ -55,6 +55,7 @@ Configuration is loaded from environment variables (or `.env` in local developme
 | `DATABASE_SLAVE_URL_01` | No | `""` | Optional read replica URL for read queries |
 | `REDIS_NODE_01` | **Yes** | - | Primary Redis cluster node URL |
 | `REDIS_PASSWORD` | No | `""` | Optional Redis authentication password |
+| `RABBITMQ_URL` | No | `amqp://guest:guest@127.0.0.1:5672/%2f` | RabbitMQ broker URL for publishing notification events |
 | `SESSION_TTL_SEC` | No | `1800` | Access token session lifetime in seconds (default: 30 minutes) |
 | `REFRESH_TOKEN_TTL_DAY` | No | `30` | Refresh token expiration period in days |
 | `GOOGLE_CLIENT_ID` | No | `""` | Optional OAuth client audience for Google token validation |

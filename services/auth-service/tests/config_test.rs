@@ -41,4 +41,5 @@ fn test_config_loads_successfully_with_required_vars() {
         config.google_oauth_url,
         "https://oauth2.googleapis.com/tokeninfo"
     );
+    assert_eq!(config.rabbitmq_url, "amqp://guest:guest@127.0.0.1:5672/%2f");
 }

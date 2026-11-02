@@ -113,7 +113,7 @@ impl SessionStore {
         if count == 1 {
             self.redis.expire(&rate_key, window_secs as i64).await?;
         }
-        if count > max_attempts as i64 {
+        if count > i64::from(max_attempts) {
             return Err(AppError::TooManyRequests(
                 "Too many verification requests. Please try again later.".into(),
             ));

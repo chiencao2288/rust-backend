@@ -6,8 +6,9 @@ description = "Shared contracts, DTOs, and client helpers for rn-services"
 
 [features]
 default = []
-all = ["auth"]
+all = ["auth", "noti"]
 auth = ["dep:serde", "dep:uuid", "dep:reqwest"]
+noti = ["dep:serde", "dep:uuid"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"], optional = true }

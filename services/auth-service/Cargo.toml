@@ -5,10 +5,11 @@ edition = "2021"
 description = "Central Authentication and Session Management Service"
 
 [dependencies]
-rn-bootstrap = { path = "../../packages/rn-bootstrap" }
+rn-service = { path = "../../packages/rn-service" }
 rn-redis = { path = "../../packages/rn-redis" }
 rn-postgres = { path = "../../packages/rn-postgres" }
-rn-contracts = { path = "../../packages/rn-contracts", features = ["auth"] }
+rn-rabbitmq = { path = "../../packages/rn-rabbitmq" }
+rn-contracts = { path = "../../packages/rn-contracts", features = ["auth", "noti"] }
 rn-utils = { path = "../../packages/rn-utils" }
 
 axum = "0.8"

@@ -1,0 +1,21 @@
+[package]
+name = "rn-service"
+version = "0.1.0"
+edition = "2021"
+description = "Unified microservice framework for rn-services (Lifecycle, HTTP/RPC servers, and Middlewares)"
+
+[dependencies]
+rn-contracts = { path = "../rn-contracts", features = ["auth"] }
+rn-macros = { path = "../rn-macros", features = ["bootstrap", "error"] }
+rn-utils = { path = "../rn-utils" }
+
+axum = "0.8"
+http-body-util = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.40", features = ["full"] }
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid = { version = "1.10", features = ["v7"] }

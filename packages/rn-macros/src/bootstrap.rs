@@ -55,16 +55,11 @@ pub fn derive_env_config(input: TokenStream) -> TokenStream {
             .attrs
             .iter()
             .find(|a| a.path().is_ident("env"))
-            .unwrap_or_else(|| {
-                panic!(
-                    "Field `{}` is missing #[env(\"KEY\")] attribute",
-                    field_name
-                )
-            });
+            .unwrap_or_else(|| panic!("Field `{field_name}` is missing #[env(\"KEY\")] attribute"));
 
         let parsed: EnvAttr = env_attr
             .parse_args()
-            .unwrap_or_else(|e| panic!("Field `{}`: invalid #[env] attribute: {}", field_name, e));
+            .unwrap_or_else(|e| panic!("Field `{field_name}`: invalid #[env] attribute: {e}"));
 
         let env_key = &parsed.key;
         let is_option = is_option_type(field_ty);
@@ -183,6 +178,12 @@ pub fn derive_env_config(input: TokenStream) -> TokenStream {
                 Self {
                     #(#field_names),*
                 }
+            }
+        }
+
+        impl rn_service::EnvConfig for #name {
+            fn load() -> Self {
+                Self::load()
             }
         }
     }

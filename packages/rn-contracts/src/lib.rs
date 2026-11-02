@@ -2,3 +2,6 @@
 
 #[cfg(feature = "auth")]
 pub mod auth;
+
+#[cfg(feature = "noti")]
+pub mod noti;

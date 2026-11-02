@@ -1,4 +1,8 @@
+use std::collections::HashMap;
+
 use chrono::{Duration, Utc};
+use rn_contracts::noti::{SendEmailPayload, NOTIFICATION_EXCHANGE, ROUTING_KEY_EMAIL};
+use rn_rabbitmq::RNRabbitMQ;
 use rn_utils::{
     generate_numeric_otp, generate_secure_token, hash_password, sha256_hash, verify_password,
 };
@@ -37,6 +41,7 @@ pub struct AuthService {
     refresh_token_ttl_day: i64,
     google_client_id: Option<String>,
     google_oauth_url: String,
+    rabbitmq: RNRabbitMQ,
 }
 
 impl AuthService {
@@ -51,6 +56,7 @@ impl AuthService {
             refresh_token_ttl_day: state.config.refresh_token_ttl_day,
             google_client_id: state.config.google_client_id,
             google_oauth_url: state.config.google_oauth_url,
+            rabbitmq: state.rabbitmq,
         }
     }
 
@@ -101,8 +107,27 @@ impl AuthService {
         self.session_store
             .set_register_otp(&email, &otp, OTP_TTL_SECS)
             .await?;
-
         tracing::info!(email = %email, otp = %otp, "Registration OTP generated");
+
+        let mut params = HashMap::new();
+        params.insert("otp".into(), otp);
+        params.insert("ttl_min".into(), (OTP_TTL_SECS / 60).to_string());
+
+        let payload = SendEmailPayload::new(
+            &email,
+            "Registration Verification Code",
+            "register_otp",
+            params,
+        );
+
+        if let Err(e) = self
+            .rabbitmq
+            .publish_json(NOTIFICATION_EXCHANGE, ROUTING_KEY_EMAIL, &payload)
+            .await
+        {
+            tracing::error!(email = %email, "Failed to publish registration OTP event: {e}");
+        }
+
         Ok(())
     }
 
@@ -335,6 +360,22 @@ impl AuthService {
             self.session_store
                 .set_reset_otp(&email, &otp, OTP_TTL_SECS)
                 .await?;
+            tracing::info!(email = %email, otp = %otp, "Password reset OTP generated");
+
+            let mut params = HashMap::new();
+            params.insert("otp".into(), otp);
+            params.insert("ttl_min".into(), (OTP_TTL_SECS / 60).to_string());
+
+            let payload =
+                SendEmailPayload::new(&email, "Password Reset Code", "reset_password", params);
+
+            if let Err(e) = self
+                .rabbitmq
+                .publish_json(NOTIFICATION_EXCHANGE, ROUTING_KEY_EMAIL, &payload)
+                .await
+            {
+                tracing::error!(email = %email, "Failed to publish reset OTP event: {e}");
+            }
         }
         Ok(())
     }

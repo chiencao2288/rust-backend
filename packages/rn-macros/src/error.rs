@@ -51,17 +51,11 @@ pub fn derive_api_error(input: TokenStream) -> TokenStream {
             .iter()
             .find(|a| a.path().is_ident("status"))
             .unwrap_or_else(|| {
-                panic!(
-                    "Variant `{}` is missing #[status(STATUS_CODE)] attribute",
-                    variant_name
-                )
+                panic!("Variant `{variant_name}` is missing #[status(STATUS_CODE)] attribute")
             });
 
         let parsed: StatusAttr = status_attr.parse_args().unwrap_or_else(|e| {
-            panic!(
-                "Variant `{}`: invalid #[status] attribute: {}",
-                variant_name, e
-            )
+            panic!("Variant `{variant_name}`: invalid #[status] attribute: {e}")
         });
 
         let status_ident = &parsed.status;

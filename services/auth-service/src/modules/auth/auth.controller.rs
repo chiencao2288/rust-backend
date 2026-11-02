@@ -222,7 +222,7 @@ pub async fn delete_account(
 
     let token = auth_header
         .strip_prefix("Bearer ")
-        .map(|s| s.trim())
+        .map(str::trim)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::Unauthorized("Invalid Bearer token".into()))?;
 

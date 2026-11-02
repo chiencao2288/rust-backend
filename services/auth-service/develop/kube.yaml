@@ -34,6 +34,19 @@ spec:
         - containerPort: 6379
           hostPort: 6379
 
+    - name: rabbitmq
+      image: docker.io/library/rabbitmq:4-management-alpine
+      env:
+        - name: RABBITMQ_DEFAULT_USER
+          value: guest
+        - name: RABBITMQ_DEFAULT_PASS
+          value: guest
+      ports:
+        - containerPort: 5672
+          hostPort: 5672
+        - containerPort: 15672
+          hostPort: 15672
+
   volumes:
     - name: sql-migrations
       hostPath:

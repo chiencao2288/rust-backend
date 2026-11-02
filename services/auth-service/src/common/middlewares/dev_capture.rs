@@ -10,9 +10,7 @@ use serde_json::{json, Value};
 
 /// Checks if the service is operating in development mode.
 fn is_dev_mode() -> bool {
-    std::env::var("APP_ENV")
-        .map(|v| v.trim().to_lowercase() != "production")
-        .unwrap_or(true)
+    !matches!(std::env::var("APP_ENV").as_deref(), Ok("production"))
 }
 
 /// Parses request metadata (method, URL, query, and sanitized body) while buffering body bytes.
@@ -81,9 +79,9 @@ pub async fn dev_request_capture_middleware(request: Request, next: Next) -> Res
     let (reconstructed_request, client_request) = extract_request_info(request).await;
     let response = next.run(reconstructed_request).await;
 
-    if !response.status().is_success() {
-        attach_request_to_error_response(response, client_request).await
-    } else {
+    if response.status().is_success() {
         response
+    } else {
+        attach_request_to_error_response(response, client_request).await
     }
 }

@@ -2,10 +2,12 @@
 resolver = "2"
 members = [
     "packages/rn-macros",
-    "packages/rn-bootstrap",
+    "packages/rn-service",
     "packages/rn-redis",
     "packages/rn-postgres",
+    "packages/rn-rabbitmq",
     "packages/rn-contracts",
     "packages/rn-utils",
     "services/auth-service",
+    "services/noti-service",
 ]

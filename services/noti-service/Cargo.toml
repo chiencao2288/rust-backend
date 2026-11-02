@@ -1,0 +1,33 @@
+[package]
+name = "noti-service"
+version = "0.1.0"
+edition = "2021"
+description = "Central Notification Service (Email, SMS, In-App)"
+
+[dependencies]
+rn-bootstrap = { path = "../../packages/rn-bootstrap" }
+rn-contracts = { path = "../../packages/rn-contracts", features = ["auth", "noti"] }
+rn-postgres = { path = "../../packages/rn-postgres" }
+rn-rabbitmq = { path = "../../packages/rn-rabbitmq" }
+rn-redis = { path = "../../packages/rn-redis" }
+rn-utils = { path = "../../packages/rn-utils" }
+
+axum = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+futures-lite = "2.6"
+lapin = "2.5"
+lettre = { version = "0.11", default-features = false, features = ["tokio1", "tokio1-native-tls", "smtp-transport", "builder"] }
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid", "chrono", "macros"] }
+thiserror = "2.0"
+tokio = { version = "1.40", features = ["full"] }
+tracing = "0.1"
+utoipa = { version = "6.0", features = ["uuid", "chrono"] }
+utoipa-swagger-ui = { version = "10.0", features = ["axum"] }
+uuid = { version = "1.10", features = ["serde", "v7"] }
+
+[dev-dependencies]
+http-body-util = "0.1"
+tower = { version = "0.5", features = ["util"] }

@@ -2,15 +2,15 @@ use auth_service::app::{AppState, Config};
 use auth_service::modules::register_routes;
 use rn_bootstrap::RNBootstrap;
 use rn_postgres::RNPostgres;
+use rn_rabbitmq::RNRabbitMQ;
 use rn_redis::RNRedis;
 
 fn main() {
     RNBootstrap::builder()
         .with_service_name("auth-service")
         .with_default_log_level("info,auth_service=debug")
-        .run(|app| async move {
-            let config = Config::load();
-
+        .build_config::<Config>()
+        .build_state(|config| async move {
             let db = RNPostgres::builder()
                 .with_master_url(&config.database_master_url)
                 .add_slave_url(config.database_slave_url_01.as_deref())
@@ -23,10 +23,17 @@ fn main() {
                 .build()
                 .await?;
 
-            let port = config.port;
-            let state = AppState::new(db, redis, config);
-            let router = register_routes(state);
+            let rabbitmq = RNRabbitMQ::builder()
+                .with_url(&config.rabbitmq_url)
+                .build()
+                .await?;
 
-            app.serve_http(router, port).await
-        });
+            Ok(AppState::new(db, redis, rabbitmq, config))
+        })
+        .with_http(|state| async move {
+            let port = state.config.port;
+            let router = register_routes(state);
+            (router, port)
+        })
+        .run();
 }

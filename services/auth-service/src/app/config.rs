@@ -32,4 +32,7 @@ pub struct Config {
         fallback = "https://oauth2.googleapis.com/tokeninfo"
     )]
     pub google_oauth_url: String,
+
+    #[env("RABBITMQ_URL", fallback = "amqp://guest:guest@127.0.0.1:5672/%2f")]
+    pub rabbitmq_url: String,
 }

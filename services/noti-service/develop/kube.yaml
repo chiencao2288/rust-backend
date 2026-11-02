@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: noti-dev-stack
+  labels:
+    app: noti-dev
+spec:
+  containers:
+    - name: postgres
+      image: docker.io/library/postgres:18
+      env:
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: postgres
+        - name: POSTGRES_DB
+          value: noti_db
+      ports:
+        - containerPort: 5432
+          hostPort: 5432
+      volumeMounts:
+        - name: sql-migrations
+          mountPath: /docker-entrypoint-initdb.d:ro
+
+    - name: redis
+      image: docker.io/library/redis:alpine
+      command:
+        - redis-server
+        - "--save"
+        - ""
+        - "--appendonly"
+        - "no"
+      ports:
+        - containerPort: 6379
+          hostPort: 6379
+
+    - name: rabbitmq
+      image: docker.io/library/rabbitmq:4-management-alpine
+      env:
+        - name: RABBITMQ_DEFAULT_USER
+          value: guest
+        - name: RABBITMQ_DEFAULT_PASS
+          value: guest
+      ports:
+        - containerPort: 5672
+          hostPort: 5672
+        - containerPort: 15672
+          hostPort: 15672
+
+  volumes:
+    - name: sql-migrations
+      hostPath:
+        path: /home/chiencao/Projects/services/services/noti-service/migrations
+        type: Directory
