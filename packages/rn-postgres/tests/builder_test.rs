@@ -20,8 +20,8 @@ fn test_builder_fails_without_master_url() {
 fn test_builder_fluent_configuration() {
     let builder = RNPostgres::builder()
         .with_master_url("postgres://user:pass@master:5432/db")
-        .add_slave_url("postgres://user:pass@slave1:5432/db")
-        .add_slave_url("postgres://user:pass@slave2:5432/db")
+        .add_slave_url(Some("postgres://user:pass@slave1:5432/db"))
+        .add_slave_url(Some("postgres://user:pass@slave2:5432/db"))
         .with_max_connections(30)
         .with_min_connections(5)
         .with_acquire_timeout(Duration::from_secs(10))

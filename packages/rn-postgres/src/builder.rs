@@ -39,9 +39,11 @@ impl RNPostgresBuilder {
         self
     }
 
-    /// Adds a Slave replica database URL.
-    pub fn add_slave_url(mut self, url: impl Into<String>) -> Self {
-        self.slave_urls.push(url.into());
+    /// Adds a Slave replica database URL if present.
+    pub fn add_slave_url(mut self, url: Option<impl Into<String>>) -> Self {
+        if let Some(url) = url {
+            self.slave_urls.push(url.into());
+        }
         self
     }
 

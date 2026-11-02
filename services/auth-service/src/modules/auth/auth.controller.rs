@@ -12,8 +12,8 @@ use super::dto::{
 };
 use super::service::AuthService;
 use super::validation::Validator;
+use crate::common::entities::AuthTokens;
 use crate::common::AppError;
-use crate::modules::tokens::AuthTokens;
 
 /// Requests an email verification OTP code prior to registration.
 #[utoipa::path(

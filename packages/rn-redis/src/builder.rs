@@ -1,7 +1,7 @@
-use std::time::Duration;
-use fred::prelude::*;
 use crate::client::RNRedis;
 use crate::error::RedisError;
+use fred::prelude::*;
+use std::time::Duration;
 
 /// Builder for configuring and creating an RNRedis client.
 #[derive(Debug, Clone)]
@@ -27,9 +27,11 @@ impl RNRedisBuilder {
         Self::default()
     }
 
-    /// Adds a single Redis node URL.
-    pub fn add_node(mut self, url: impl Into<String>) -> Self {
-        self.nodes.push(url.into());
+    /// Adds a single Redis node URL if present.
+    pub fn add_node(mut self, url: Option<impl Into<String>>) -> Self {
+        if let Some(url) = url {
+            self.nodes.push(url.into());
+        }
         self
     }
 
@@ -45,9 +47,11 @@ impl RNRedisBuilder {
         self
     }
 
-    /// Sets an optional cluster password override.
-    pub fn with_password(mut self, password: impl Into<String>) -> Self {
-        self.password = Some(password.into());
+    /// Sets an optional cluster password override if present.
+    pub fn with_password(mut self, password: Option<impl Into<String>>) -> Self {
+        if let Some(pwd) = password {
+            self.password = Some(pwd.into());
+        }
         self
     }
 
@@ -64,7 +68,10 @@ impl RNRedisBuilder {
             if let ServerConfig::Clustered { ref mut hosts, .. } = cfg.server {
                 for node in self.nodes.iter().skip(1) {
                     let other_cfg = Config::from_url_clustered(node)?;
-                    if let ServerConfig::Clustered { hosts: other_hosts, .. } = other_cfg.server {
+                    if let ServerConfig::Clustered {
+                        hosts: other_hosts, ..
+                    } = other_cfg.server
+                    {
                         hosts.extend(other_hosts);
                     }
                 }

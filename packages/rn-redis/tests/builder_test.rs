@@ -19,9 +19,9 @@ fn test_builder_fails_without_nodes() {
 #[test]
 fn test_builder_fluent_chaining() {
     let builder = RNRedis::builder()
-        .add_node("redis://127.0.0.1:6379")
+        .add_node(Some("redis://127.0.0.1:6379"))
         .with_timeout(Duration::from_secs(10))
-        .with_password("secret_pass");
+        .with_password(Some("secret_pass"));
 
     // Validates builder state
     assert!(format!("{:?}", builder).contains("127.0.0.1:6379"));

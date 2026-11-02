@@ -6,10 +6,16 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use super::dto::LoginDto;
-use crate::common::constant::{ACCOUNT_COOLDOWN_SECS, OTP_TTL_SECS};
+use crate::app::AppState;
+use crate::common::constant::{
+    ACCOUNT_COOLDOWN_SECS, OTP_COOLDOWN_SEC, OTP_MAX_HOURLY_ATTEMPTS, OTP_RATE_LIMIT_WINDOW_SEC,
+    OTP_TTL_SECS,
+};
+use crate::common::entities::{AuthTokens, IdentityProvider, SessionData, UserStatus};
+use crate::common::repositories::{
+    OtpVerifyResult, SessionStore, TokensRepository, UsersRepository,
+};
 use crate::common::AppError;
-use crate::modules::tokens::{AuthTokens, SessionData, SessionStore, TokensRepository};
-use crate::modules::users::{IdentityProvider, UserStatus, UsersRepository};
 #[derive(Debug, Deserialize)]
 struct GoogleTokenInfo {
     sub: String,
@@ -27,39 +33,24 @@ pub struct AuthService {
     tokens_repo: TokensRepository,
     session_store: SessionStore,
     http_client: reqwest::Client,
-    session_ttl_secs: u64,
-    refresh_token_ttl_days: i64,
+    session_ttl_sec: u64,
+    refresh_token_ttl_day: i64,
     google_client_id: Option<String>,
+    google_oauth_url: String,
 }
 
 impl AuthService {
-    /// Creates a new `AuthService` instance with the required repositories and configuration.
-    ///
-    /// # Arguments
-    /// * `users_repo` - Data access repository for users and authentication identities.
-    /// * `tokens_repo` - Data access repository for persistent refresh tokens in PostgreSQL.
-    /// * `session_store` - Cache repository for active sessions and temporary OTPs in Redis.
-    /// * `http_client` - HTTP client used for verifying third-party OAuth provider tokens.
-    /// * `session_ttl_secs` - Access token lifetime in seconds stored in Redis (e.g. 1800).
-    /// * `refresh_token_ttl_days` - Persistent refresh token expiration period in days.
-    /// * `google_client_id` - Optional OAuth client audience used to enforce Google token verification.
-    pub fn new(
-        users_repo: UsersRepository,
-        tokens_repo: TokensRepository,
-        session_store: SessionStore,
-        http_client: reqwest::Client,
-        session_ttl_secs: u64,
-        refresh_token_ttl_days: i64,
-        google_client_id: Option<String>,
-    ) -> Self {
+    /// Creates a new `AuthService` initialized from the shared application state.
+    pub fn new(state: AppState) -> Self {
         Self {
-            users_repo,
-            tokens_repo,
-            session_store,
-            http_client,
-            session_ttl_secs,
-            refresh_token_ttl_days,
-            google_client_id,
+            users_repo: state.users_repo,
+            tokens_repo: state.tokens_repo,
+            session_store: state.session_store,
+            http_client: state.http_client,
+            session_ttl_sec: state.config.session_ttl_sec,
+            refresh_token_ttl_day: state.config.refresh_token_ttl_day,
+            google_client_id: state.config.google_client_id,
+            google_oauth_url: state.config.google_oauth_url,
         }
     }
 
@@ -96,6 +87,15 @@ impl AuthService {
         if self.users_repo.find_by_email(&email).await?.is_some() {
             return Err(AppError::Conflict("Email is already registered".into()));
         }
+        self.session_store
+            .check_and_set_otp_rate_limit(
+                "register",
+                &email,
+                OTP_COOLDOWN_SEC,
+                OTP_MAX_HOURLY_ATTEMPTS,
+                OTP_RATE_LIMIT_WINDOW_SEC,
+            )
+            .await?;
 
         let otp = generate_numeric_otp(6);
         self.session_store
@@ -130,12 +130,20 @@ impl AuthService {
         otp: &str,
     ) -> Result<AuthTokens, AppError> {
         let email = email.trim().to_lowercase();
-        let is_valid = self
+        match self
             .session_store
             .verify_and_delete_register_otp(&email, otp.trim())
-            .await?;
-        if !is_valid {
-            return Err(AppError::BadRequest("Invalid or expired OTP".into()));
+            .await?
+        {
+            OtpVerifyResult::Valid => {}
+            OtpVerifyResult::AttemptsExceeded => {
+                return Err(AppError::BadRequest(
+                    "Too many failed verification attempts. Verification code has been invalidated.".into(),
+                ));
+            }
+            OtpVerifyResult::Invalid => {
+                return Err(AppError::BadRequest("Invalid or expired OTP".into()));
+            }
         }
 
         let password_hash = hash_password(password)?;
@@ -313,11 +321,20 @@ impl AuthService {
     pub async fn request_password_reset_otp(&self, email: &str) -> Result<(), AppError> {
         let email = email.trim().to_lowercase();
         if self.users_repo.find_by_email(&email).await?.is_some() {
+            self.session_store
+                .check_and_set_otp_rate_limit(
+                    "reset_password",
+                    &email,
+                    OTP_COOLDOWN_SEC,
+                    OTP_MAX_HOURLY_ATTEMPTS,
+                    OTP_RATE_LIMIT_WINDOW_SEC,
+                )
+                .await?;
+
             let otp = generate_numeric_otp(6);
             self.session_store
                 .set_reset_otp(&email, &otp, OTP_TTL_SECS)
                 .await?;
-            tracing::info!(email = %email, otp = %otp, "Password reset OTP generated");
         }
         Ok(())
     }
@@ -347,12 +364,20 @@ impl AuthService {
         new_password: &str,
     ) -> Result<(), AppError> {
         let email = email.trim().to_lowercase();
-        let is_valid = self
+        match self
             .session_store
             .verify_and_delete_reset_otp(&email, otp.trim())
-            .await?;
-        if !is_valid {
-            return Err(AppError::BadRequest("Invalid or expired OTP".into()));
+            .await?
+        {
+            OtpVerifyResult::Valid => {}
+            OtpVerifyResult::AttemptsExceeded => {
+                return Err(AppError::BadRequest(
+                    "Too many failed verification attempts. Verification code has been invalidated.".into(),
+                ));
+            }
+            OtpVerifyResult::Invalid => {
+                return Err(AppError::BadRequest("Invalid or expired OTP".into()));
+            }
         }
 
         let user = self
@@ -474,11 +499,11 @@ impl AuthService {
         };
 
         self.session_store
-            .save_session(&access_token, &session, self.session_ttl_secs)
+            .save_session(&access_token, &session, self.session_ttl_sec)
             .await?;
 
         let token_hash = sha256_hash(&refresh_token);
-        let expires_at = Utc::now() + Duration::days(self.refresh_token_ttl_days);
+        let expires_at = Utc::now() + Duration::days(self.refresh_token_ttl_day);
         self.tokens_repo
             .create_refresh_token(user_id, &token_hash, expires_at)
             .await?;
@@ -487,20 +512,16 @@ impl AuthService {
             access_token,
             refresh_token,
             token_type: "Bearer".into(),
-            expires_in: self.session_ttl_secs,
+            expires_in: self.session_ttl_sec,
         })
     }
 
     /// Validates a Google ID token with Google's public verification endpoint.
     async fn verify_google_token(&self, id_token: &str) -> Result<(String, String), AppError> {
-        let url = format!(
-            "https://oauth2.googleapis.com/tokeninfo?id_token={}",
-            id_token.trim()
-        );
-
         let info = self
             .http_client
-            .get(&url)
+            .get(&self.google_oauth_url)
+            .query(&[("id_token", id_token.trim())])
             .send()
             .await?
             .error_for_status()

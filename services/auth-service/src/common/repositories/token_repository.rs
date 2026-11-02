@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use rn_postgres::RNPostgres;
 use uuid::Uuid;
 
-use super::entity::RefreshToken;
+use crate::common::entities::RefreshToken;
 use crate::common::AppError;
 
 /// Data access repository for the `refresh_tokens` PostgreSQL table.

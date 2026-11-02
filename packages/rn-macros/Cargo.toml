@@ -1,0 +1,18 @@
+[package]
+name = "rn-macros"
+version = "0.1.0"
+edition = "2021"
+description = "Procedural macros collection for rn packages"
+
+[lib]
+proc-macro = true
+
+[features]
+default = []
+bootstrap = []
+error = []
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["full"] }

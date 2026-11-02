@@ -1,7 +1,7 @@
 use rn_postgres::RNPostgres;
 use uuid::Uuid;
 
-use super::entity::{Identity, IdentityProvider, User};
+use crate::common::entities::{Identity, IdentityProvider, User};
 use crate::common::AppError;
 
 /// Data access repository for the `users` and `identities` PostgreSQL tables.

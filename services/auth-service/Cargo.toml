@@ -5,6 +5,7 @@ edition = "2021"
 description = "Central Authentication and Session Management Service"
 
 [dependencies]
+rn-bootstrap = { path = "../../packages/rn-bootstrap" }
 rn-redis = { path = "../../packages/rn-redis" }
 rn-postgres = { path = "../../packages/rn-postgres" }
 rn-contracts = { path = "../../packages/rn-contracts", features = ["auth"] }
@@ -21,9 +22,7 @@ thiserror = "2.0"
 utoipa = { version = "6.0", features = ["uuid", "chrono"] }
 utoipa-swagger-ui = { version = "10.0", features = ["axum"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
-dotenvy = "0.15"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

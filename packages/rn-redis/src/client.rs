@@ -28,7 +28,7 @@ impl RNRedis {
 
     /// Connects to a Redis cluster node URL with default settings.
     pub async fn connect(url: &str) -> Result<Self, RedisError> {
-        Self::builder().add_node(url).build().await
+        Self::builder().add_node(Some(url)).build().await
     }
 
     /// Retrieves an item from Redis and deserializes it from JSON.
@@ -95,6 +95,24 @@ impl RNRedis {
     pub async fn exists(&self, key: &str) -> Result<bool, RedisError> {
         let count: i64 = self.client.exists(key).await?;
         Ok(count > 0)
+    }
+
+    /// Increments the integer value stored at key by one.
+    pub async fn incr(&self, key: &str) -> Result<i64, RedisError> {
+        let val: i64 = self.client.incr(key).await?;
+        Ok(val)
+    }
+
+    /// Sets a timeout in seconds on a key.
+    pub async fn expire(&self, key: &str, seconds: i64) -> Result<bool, RedisError> {
+        let res: bool = self.client.expire(key, seconds, None).await?;
+        Ok(res)
+    }
+
+    /// Returns the remaining time to live of a key in seconds.
+    pub async fn ttl(&self, key: &str) -> Result<i64, RedisError> {
+        let ttl: i64 = self.client.ttl(key).await?;
+        Ok(ttl)
     }
 
     /// Executes a Lua script atomically on Redis.

@@ -1,6 +1,10 @@
+#[path = "auth.controller.rs"]
 pub mod controller;
+#[path = "auth.dto.rs"]
 pub mod dto;
+#[path = "auth.service.rs"]
 pub mod service;
+#[path = "auth.validation.rs"]
 pub mod validation;
 
 pub use service::AuthService;
@@ -13,6 +17,7 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::app::AppState;
 use crate::common::dev_request_capture_middleware;
 
 #[derive(OpenApi)]
@@ -41,7 +46,7 @@ use crate::common::dev_request_capture_middleware;
             dto::VerifyTokenDto,
             dto::VerifyTokenResponseDto,
             dto::MessageResponseDto,
-            crate::modules::tokens::AuthTokens,
+            crate::common::entities::AuthTokens,
         )
     ),
     tags(
@@ -70,24 +75,25 @@ impl utoipa::Modify for SecurityAddon {
     }
 }
 
+/// Registers the Auth module: creates service from state and mounts router.
+pub fn register(state: AppState) -> Router {
+    let auth_service = Arc::new(AuthService::new(state));
+    auth_router(auth_service)
+}
+
 /// Configures and returns the Auth module router with all routes, middleware, and Swagger UI mounted.
+#[rustfmt::skip]
 pub fn auth_router(auth_service: Arc<AuthService>) -> Router {
     Router::new()
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .merge(SwaggerUi::new("/api/docs").url("/api/docs/openapi.json", ApiDoc::openapi()))
         .route("/health", get(controller::health))
         .route("/api/v1/auth/register/otp", post(controller::register_otp))
         .route("/api/v1/auth/register", post(controller::register))
         .route("/api/v1/auth/login", post(controller::login))
         .route("/api/v1/auth/refresh", post(controller::refresh))
         .route("/api/v1/auth/logout", post(controller::logout))
-        .route(
-            "/api/v1/auth/forgot-password",
-            post(controller::forgot_password),
-        )
-        .route(
-            "/api/v1/auth/reset-password",
-            post(controller::reset_password),
-        )
+        .route("/api/v1/auth/forgot-password", post(controller::forgot_password))
+        .route("/api/v1/auth/reset-password", post(controller::reset_password))
         .route("/api/v1/auth/account", delete(controller::delete_account))
         .route("/api/v1/auth/verify", post(controller::verify_token))
         .layer(axum::middleware::from_fn(dev_request_capture_middleware))
